@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenamiento de Tiempos Verbales - Estilo Profesional</title>
+    <style>
+        :root {
+            --bg-dark: #1a2a3a; /* Azul profesional oscuro para el fondo */
+            --container-bg: #2c3e50; /* Azul grisáceo para el panel */
+            --primary-blue: #3498db; 
+            --accent-blue: #5dade2;
+            --text-light: #ecf0f1;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-light);
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            width: 90%;
+            max-width: 650px;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 { color: var(--accent-blue); font-size: 26px; margin-bottom: 20px; }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #bdc3c7;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .question-box {
+            background-color: rgba(0,0,0,0.2);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--primary-blue);
+        }
+
+        .verb-prompt { font-size: 1.1em; line-height: 1.6; color: #fff; }
+
+        input[type="text"] {
+            width: 85%;
+            padding: 14px;
+            font-size: 17px;
+            background-color: #fdfdfd;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        button {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .feedback { margin-top: 20px; font-weight: 600; min-height: 30px; font-size: 1.05em; }
+        .feedback.error { color: #ff7675; }
+        .feedback.success { color: #55efc4; }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.6s ease; }
+        .confetti { font-size: 60px; margin: 20px 0; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="game-screen" class="screen active">
+        <div class="stats-bar">
+            <span id="progress-text">Pregunta 1 de 30</span>
+            <span>Puntuación: <span id="score" style="color:var(--accent-blue)">0</span></span>
+        </div>
+        <div class="question-box">
+            <div class="verb-prompt" id="question-text">Cargando preguntas...</div>
+        </div>
+        <input type="text" id="user-answer" placeholder="Escribe tu respuesta aquí..." autocomplete="off">
+        <div id="feedback-msg" class="feedback"></div>
+        <button id="action-btn" onclick="checkAnswer()">Comprobar</button>
+    </div>
+
+    <div id="name-screen" class="screen">
+        <h1 style="color: gold;">🏆 ¡PUNTUACIÓN PERFECTA!</h1>
+        <p>Has superado el desafío sin errores.</p>
+        <div style="margin: 30px 0;">
+            <p>Escribe tu nombre para el salón de la fama:</p>
+            <input type="text" id="player-name" placeholder="Tu nombre o apodo">
+            <br>
+            <button onclick="showChampionScreen()">Obtener Diploma</button>
+        </div>
+    </div>
+
+    <div id="champion-screen" class="screen">
+        <div class="confetti">🏆 🥇 🎉</div>
+        <h1 style="color: #f1c40f;">¡NUEVO CAMPEÓN!</h1>
+        <p style="font-size: 1.5em; margin: 10px 0;">
+            <span id="final-name" style="text-decoration: underline;"></span>
+        </p>
+        <p>es un nuevo campeón del modo indicativo.</p>
+        <div class="confetti">🎊 🎇 🎖️</div>
+        <button onclick="location.reload()" style="background-color: var(--success-color);">Reiniciar Desafío</button>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <h1>Ejercicio Completado</h1>
+        <p style="font-size: 1.2em;">Has obtenido <span id="final-score" style="color:var(--accent-blue); font-weight:bold;"></span> de 30 puntos.</p>
+        <p>¡Vuelve a intentarlo para conseguir el trofeo de campeón!</p>
+        <button onclick="location.reload()">Intentar de nuevo</button>
+    </div>
+</div>
+
+<script>
+    const originalQuestions = [
+        { q: "Primera persona del singular del presente de indicativo del verbo saltar", a: "yo salto" },
+        { q: "Segunda persona del plural del pretérito perfecto simple de indicativo del verbo cantar", a: "vosotros cantasteis" },
+        { q: "Tercera persona del singular del pretérito imperfecto de indicativo del verbo jugar", a: "él jugaba" },
+        { q: "Segunda persona del singular del pretérito pluscuamperfecto de indicativo del verbo bajar", a: "tú habías bajado" },
+        { q: "Primera persona del plural del pretérito perfecto compuesto de indicativo del verbo estudiar", a: "nosotros hemos estudiado" },
+        { q: "Segunda persona del singular del pretérito anterior de indicativo del verbo leer", a: "tú hubiste leído" },
+        { q: "Primera persona del plural del futuro simple de indicativo del verbo beber", a: "nosotros beberemos" },
+        { q: "Segunda persona del plural del futuro compuesto de indicativo del verbo tener", a: "vosotros habréis tenido" },
+        { q: "Primera persona del plural del condicional simple de indicativo del verbo escoger", a: "nosotros escogeríamos" },
+        { q: "Segunda persona del singular del condicional compuesto de indicativo del verbo perder", a: "tú habrías perdido" },
+        { q: "Tercera persona del singular del pretérito perfecto compuesto de indicativo del verbo sentir", a: "él ha sentido" },
+        { q: "Tercera persona del plural del pretérito anterior de indicativo del verbo dormir", a: "ellos hubieron dormido" },
+        { q: "Primera persona del singular del condicional compuesto de indicativo del verbo vivir", a: "yo habría vivido" },
+        { q: "Segunda persona del plural del presente de indicativo del verbo pedir", a: "vosotros pedís" },
+        { q: "Tercera persona del singular del pretérito perfecto simple de indicativo del verbo mentir", a: "él mintió" },
+        { q: "Primera persona del plural del condicional simple de indicativo del verbo caminar", a: "nosotros caminaríamos" },
+        { q: "Segunda persona del singular del pretérito pluscuamperfecto de indicativo del verbo admirar", a: "tú habías admirado" },
+        { q: "Tercera persona del plural del futuro compuesto de indicativo del verbo pescar", a: "ellos habrán pescado" },
+        { q: "Primera persona del plural del pretérito imperfecto de indicativo del verbo viajar", a: "nosotros viajábamos" },
+        { q: "Segunda persona del singular del futuro simple de indicativo del verbo mezclar", a: "tú mezclarás" },
+        { q: "Primera persona del singular del condicional compuesto de indicativo del verbo tener", a: "yo habría tenido" },
+        { q: "Segunda persona del plural del futuro compuesto de indicativo del verbo poder", a: "vosotros habréis podido" },
+        { q: "Tercera persona del singular del pretérito anterior de indicativo del verbo merecer", a: "él hubo merecido" },
+        { q: "Primera persona del plural del pretérito pluscuamperfecto de indicativo del verbo beber", a: "nosotros habíamos bebido" },
+        { q: "Segunda persona del singular del pretérito perfecto compuesto de indicativo del verbo entretener", a: "tú has entretenido" },
+        { q: "Tercera persona del plural del condicional simple de indicativo del verbo torcer", a: "ellos torcerían" },
+        { q: "Primera persona del singular del futuro simple de indicativo del verbo reír", a: "yo reiré" },
+        { q: "Segunda persona del plural del pretérito perfecto simple de indicativo del verbo salir", a: "vosotros salisteis" },
+        { q: "Primera persona del plural del pretérito imperfecto de indicativo del verbo pedir", a: "nosotros pedíamos" },
+        { q: "Tercera persona del singular del presente de indicativo del verbo sonreír", a: "él sonríe" }
+    ];
+
+    let questions = [];
+    let currentQuestion = 0;
+    let score = 0;
+    let isCorrectionPhase = false;
+
+    const questionTextEl = document.getElementById('question-text');
+    const inputEl = document.getElementById('user-answer');
+    const feedbackEl = document.getElementById('feedback-msg');
+    const actionBtn = document.getElementById('action-btn');
+
+    function shuffleQuestions() {
+        questions = [...originalQuestions].sort(() => Math.random() - 0.5);
+    }
+
+    function loadQuestion() {
+        if (currentQuestion >= questions.length) {
+            finishGame();
+            return;
+        }
+        isCorrectionPhase = false;
+        inputEl.value = "";
+        inputEl.style.backgroundColor = "#fff";
+        inputEl.focus();
+        feedbackEl.textContent = "";
+        actionBtn.textContent = "Comprobar";
+        questionTextEl.textContent = questions[currentQuestion].q;
+        document.getElementById('progress-text').textContent = `Pregunta ${currentQuestion + 1} de 30`;
+    }
+
+    function checkAnswer() {
+        const userAnswer = inputEl.value;
+        const correctAnswer = questions[currentQuestion].a;
+
+        if (!userAnswer.trim()) return;
+
+        // Normalización y lógica de género
+        let cleanUser = userAnswer.trim().toLowerCase().replace(/\./g, '').replace(/\bellas\b/g, 'ellos').replace(/\bnosotras\b/g, 'nosotros').replace(/\bvosotras\b/g, 'vosotros').replace(/\bella\b/g, 'él');
+        let cleanCorrect = correctAnswer.trim().toLowerCase().replace(/\./g, '');
+
+        if (isCorrectionPhase) {
+            if (cleanUser === cleanCorrect) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                feedbackEl.textContent = `Aún es incorrecto. Escribe: "${correctAnswer}"`;
+            }
+            return;
+        }
+
+        if (cleanUser === cleanCorrect) {
+            score++;
+            document.getElementById('score').textContent = score;
+            feedbackEl.className = "feedback success";
+            feedbackEl.textContent = "¡Excelente!";
+            setTimeout(() => { currentQuestion++; loadQuestion(); }, 800);
+        } else {
+            isCorrectionPhase = true;
+            feedbackEl.className = "feedback error";
+            feedbackEl.innerHTML = `Incorrecto. Debes escribir: <strong>${correctAnswer}</strong>`;
+            inputEl.value = "";
+            actionBtn.textContent = "Validar corrección";
+        }
+    }
+
+    function finishGame() {
+        document.getElementById('game-screen').classList.remove('active');
+        if (score === 30) {
+            document.getElementById('name-screen').classList.add('active');
+        } else {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-screen').classList.add('active');
+        }
+    }
+
+    function showChampionScreen() {
+        const name = document.getElementById('player-name').value;
+        if (!name) return;
+        document.getElementById('final-name').textContent = name;
+        document.getElementById('name-screen').classList.remove('active');
+        document.getElementById('champion-screen').classList.add('active');
+    }
+
+    inputEl.addEventListener("keypress", e => { if(e.key === "Enter") checkAnswer(); });
+
+    shuffleQuestions();
+    loadQuestion();
+</script>
+</body>
+</html>
